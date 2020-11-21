@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/camilo-ls/video-maker/issues"
   },
-  "homepage": "https://github.com/camilo-ls/video-maker#readme"
+  "homepage": "https://github.com/camilo-ls/video-maker#readme",
+  "dependencies": {
+    "readline-sync": "^1.4.10"
+  }
 }
