@@ -1,6 +1,7 @@
 const state = require('./state')
 const google = require('googleapis').google
 const customSearch = google.customsearch('v1')
+const imageDownloader = require('image-downloader')
 
 const googleSearchCredentials = require('../credentials/google-search.json')
 
@@ -8,6 +9,7 @@ async function robot() {
     const content = state.load()
 
     await fetchImagesOfAllSentences(content)
+    await downloadAllImages(content)
 
     state.save(content)
 
@@ -26,8 +28,8 @@ async function robot() {
             cx: googleSearchCredentials.searchEngineId,
             q: query,
             searchType: 'image',
-            imgSize: 'xxlarge',
-            num: 5
+            imgSize: 'large',
+            num: 10
         })
 
         const imagesUrl = response.data.items.map(item => {
@@ -35,6 +37,38 @@ async function robot() {
         })
 
         return imagesUrl
+    }
+
+    async function downloadAllImages(content) {
+        content.downloadedImages = []
+
+        for (let sentenceIndex = 0; sentenceIndex < content.sentences.length; sentenceIndex++) {
+            const images = content.sentences[sentenceIndex].images
+
+            for (let imageIndex = 0; imageIndex < images.length; imageIndex++) {
+                const imageUrl = images[imageIndex]
+
+                try {
+                    if (content.downloadedImages.includes(imageUrl)) {
+                        throw new Error('Imagem já baixada')
+                    }
+                    await downloadAndSave(imageUrl, `${sentenceIndex}-original.jpg`)
+                    content.downloadedImages.push(imageUrl)
+                    console.log(`> [${sentenceIndex}][${imageIndex}] Baixou imagem com sucesso ${imageUrl}`)
+                    break
+                }
+                catch(error) {
+                    console.log(`> [${sentenceIndex}][${imageIndex}] Erro ao baixar (${imageUrl}): ${error}`)
+                }
+            }
+        }
+    }
+
+    async function downloadAndSave(url, filename) {
+        return await imageDownloader.image({
+            url: url,
+            dest: `./content/${filename}`
+        })
     }
 }
 
